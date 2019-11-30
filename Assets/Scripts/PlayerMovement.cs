@@ -140,8 +140,15 @@ public class PlayerMovement : MonoBehaviour
 
     void RotationLook(float h, float v, float speed)
     {
+        var rotationClamp = 0.3f;
+
+        h = Mathf.Clamp(h, -rotationClamp, rotationClamp);
+        v = Mathf.Clamp(v, -rotationClamp, rotationClamp);
+
         aimTarget.parent.position = Vector3.zero;
         aimTarget.localPosition = new Vector3(h, v, 1);
+
+
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(aimTarget.position), Mathf.Deg2Rad * speed * Time.deltaTime);
     }
 
