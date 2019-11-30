@@ -65,6 +65,14 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""Aim"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""29124726-fa98-4d39-a41f-df8ecb4c62c5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -243,6 +251,17 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
                     ""action"": ""Lean Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""603a5dfe-1fa3-421f-b4f4-909e4002fa73"",
+                    ""path"": ""<Gamepad>/rightStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Aim"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -285,6 +304,7 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
         m_StarshipControls_Break = m_StarshipControls.FindAction("Break", throwIfNotFound: true);
         m_StarshipControls_LeanLeft = m_StarshipControls.FindAction("Lean Left", throwIfNotFound: true);
         m_StarshipControls_LeanRight = m_StarshipControls.FindAction("Lean Right", throwIfNotFound: true);
+        m_StarshipControls_Aim = m_StarshipControls.FindAction("Aim", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -340,6 +360,7 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
     private readonly InputAction m_StarshipControls_Break;
     private readonly InputAction m_StarshipControls_LeanLeft;
     private readonly InputAction m_StarshipControls_LeanRight;
+    private readonly InputAction m_StarshipControls_Aim;
     public struct StarshipControlsActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -350,6 +371,7 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
         public InputAction @Break => m_Wrapper.m_StarshipControls_Break;
         public InputAction @LeanLeft => m_Wrapper.m_StarshipControls_LeanLeft;
         public InputAction @LeanRight => m_Wrapper.m_StarshipControls_LeanRight;
+        public InputAction @Aim => m_Wrapper.m_StarshipControls_Aim;
         public InputActionMap Get() { return m_Wrapper.m_StarshipControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -377,6 +399,9 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
                 @LeanRight.started -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnLeanRight;
                 @LeanRight.performed -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnLeanRight;
                 @LeanRight.canceled -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnLeanRight;
+                @Aim.started -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnAim;
+                @Aim.performed -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnAim;
+                @Aim.canceled -= m_Wrapper.m_StarshipControlsActionsCallbackInterface.OnAim;
             }
             m_Wrapper.m_StarshipControlsActionsCallbackInterface = instance;
             if (instance != null)
@@ -399,6 +424,9 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
                 @LeanRight.started += instance.OnLeanRight;
                 @LeanRight.performed += instance.OnLeanRight;
                 @LeanRight.canceled += instance.OnLeanRight;
+                @Aim.started += instance.OnAim;
+                @Aim.performed += instance.OnAim;
+                @Aim.canceled += instance.OnAim;
             }
         }
     }
@@ -429,5 +457,6 @@ public class @PlayerInputActions : IInputActionCollection, IDisposable
         void OnBreak(InputAction.CallbackContext context);
         void OnLeanLeft(InputAction.CallbackContext context);
         void OnLeanRight(InputAction.CallbackContext context);
+        void OnAim(InputAction.CallbackContext context);
     }
 }

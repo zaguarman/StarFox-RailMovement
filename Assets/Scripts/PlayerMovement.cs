@@ -49,6 +49,11 @@ public class PlayerMovement : MonoBehaviour
 
     /////////////////////////////////////////////////////////
 
+    private float aimX;
+    private float aimY;
+
+    /////////////////////////////////////////////////////////
+
     private bool boosting;
     private bool breaking;
 
@@ -58,6 +63,7 @@ public class PlayerMovement : MonoBehaviour
 
         controls.StarshipControls.Shoot.performed += ctx => Shoot();
         controls.StarshipControls.Move.performed += ctx => { moveX = ctx.ReadValue<Vector2>().x; moveY = ctx.ReadValue<Vector2>().y; };
+        controls.StarshipControls.Aim.performed += ctx => { aimX = ctx.ReadValue<Vector2>().x; aimY = ctx.ReadValue<Vector2>().y; };
 
         controls.StarshipControls.Boost.started  += ctx => { Boost(true); };
         controls.StarshipControls.Boost.canceled += ctx => { Boost(false); };
@@ -95,12 +101,14 @@ public class PlayerMovement : MonoBehaviour
         leaningAngle += rotatingSpeed * speedMultiplier;
 
         Lean(leaningAngle);
+
+        RotationLook(aimX, aimY, lookSpeed);
     }
 
     void Move(float h, float v)
     {
         LocalMove(h, v, xySpeed);
-        RotationLook(h, v, lookSpeed);
+        //RotationLook(h, v, lookSpeed);
     }
 
     void Lean(float direction)
