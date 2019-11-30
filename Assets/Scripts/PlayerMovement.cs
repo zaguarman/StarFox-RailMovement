@@ -6,6 +6,8 @@ using UnityEngine.Rendering.PostProcessing;
 public class PlayerMovement : MonoBehaviour
 {
     private Transform playerModel;
+    public GameObject projectile;
+    public Transform aimObject; 
 
     [Header("Settings")]
     public bool joystick = false;
@@ -36,24 +38,37 @@ public class PlayerMovement : MonoBehaviour
 
     /////////////////////////////////////////////////////////
 
-
+    private float speedMultiplier = 2f;
     private float rotatingSpeed;
     private float leaningAngle;
+
+    /////////////////////////////////////////////////////////
+
+    private float moveX;
+    private float moveY;
+
+    /////////////////////////////////////////////////////////
+
+    private bool boosting;
+    private bool breaking;
 
     void Awake()
     {
         controls = new PlayerInputActions();
 
         controls.StarshipControls.Shoot.performed += ctx => Shoot();
-        controls.StarshipControls.Move.performed += ctx => Move(ctx.ReadValue<Vector2>().x, ctx.ReadValue<Vector2>().y);
+        controls.StarshipControls.Move.performed += ctx => { moveX = ctx.ReadValue<Vector2>().x; moveY = ctx.ReadValue<Vector2>().y; };
 
-        controls.StarshipControls.Boost.performed += ctx => Boost(ctx.performed);
-        controls.StarshipControls.Break.performed += ctx => Break(ctx.performed);
+        controls.StarshipControls.Boost.started  += ctx => { Boost(true); };
+        controls.StarshipControls.Boost.canceled += ctx => { Boost(false); };
 
-        controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); Debug.Log($"Left {rotatingSpeed}"); };
+        controls.StarshipControls.Break.started += ctx => { Break(true); };
+        controls.StarshipControls.Break.canceled += ctx => { Break(false); };
+
+        controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); };
         controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
 
-        controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); Debug.Log($"Right {rotatingSpeed}"); };
+        controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); };
         controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
 
         controls.Enable();
@@ -72,12 +87,12 @@ public class PlayerMovement : MonoBehaviour
         //else
         //    Cursor.lockState = CursorLockMode.Locked;
 
-        float h = joystick ? Input.GetAxis("Horizontal") : Input.GetAxis("Mouse X");
-        float v = joystick ? Input.GetAxis("Vertical") : Input.GetAxis("Mouse Y");
+        //float h = joystick ? Input.GetAxis("Horizontal") : Input.GetAxis("Mouse X");
+        //float v = joystick ? Input.GetAxis("Vertical") : Input.GetAxis("Mouse Y");
 
-        Move(h, v);
+        Move(moveX, moveY);
 
-        leaningAngle += rotatingSpeed;
+        leaningAngle += rotatingSpeed * speedMultiplier;
 
         Lean(leaningAngle);
     }
@@ -123,13 +138,13 @@ public class PlayerMovement : MonoBehaviour
     void HorizontalLean(Transform target, float axis)
     {
         Vector3 targetEulerAngels = target.localEulerAngles;
-        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, -axis);
+        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, axis);
     }
 
     void HorizontalLeanLerp(Transform target, float axis, float lerpTime)
     {
         Vector3 targetEulerAngels = target.localEulerAngles;
-        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, Mathf.LerpAngle(targetEulerAngels.z, -axis, lerpTime));
+        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, Mathf.LerpAngle(targetEulerAngels.z, axis, lerpTime));
     }
 
     private void OnDrawGizmos()
@@ -137,7 +152,6 @@ public class PlayerMovement : MonoBehaviour
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(aimTarget.position, .5f);
         Gizmos.DrawSphere(aimTarget.position, .15f);
-
     }
 
     public void Roll(int direction)
@@ -222,6 +236,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Shoot()
     {
-        Debug.Log("We shot the sherif");
+        var bullet = Instantiate(projectile, aimObject.position, aimObject.rotation);
+        var bulletRB = bullet.GetComponent<Rigidbody>();
+        bulletRB.AddForce(aimObject.transform.forward * 5000);
     }
 }
