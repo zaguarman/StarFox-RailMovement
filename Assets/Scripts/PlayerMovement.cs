@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using DG.Tweening;
 using Cinemachine;
 using UnityEngine.Rendering.PostProcessing;
@@ -10,13 +8,15 @@ public class PlayerMovement : MonoBehaviour
     private Transform playerModel;
 
     [Header("Settings")]
-    public bool joystick = true;
+    public bool joystick = false;
+
+    public PlayerInputActions controls;
 
     [Space]
 
     [Header("Parameters")]
     public float xySpeed = 18;
-    public float lookSpeed = 340;
+    public float lookSpeed = 200;
     public float forwardSpeed = 6;
 
     [Space]
@@ -34,6 +34,31 @@ public class PlayerMovement : MonoBehaviour
     public ParticleSystem barrel;
     public ParticleSystem stars;
 
+    /////////////////////////////////////////////////////////
+
+
+    private float rotatingSpeed;
+    private float leaningAngle;
+
+    void Awake()
+    {
+        controls = new PlayerInputActions();
+
+        controls.StarshipControls.Shoot.performed += ctx => Shoot();
+        controls.StarshipControls.Move.performed += ctx => Move(ctx.ReadValue<Vector2>().x, ctx.ReadValue<Vector2>().y);
+
+        controls.StarshipControls.Boost.performed += ctx => Boost(ctx.performed);
+        controls.StarshipControls.Break.performed += ctx => Break(ctx.performed);
+
+        controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); Debug.Log($"Left {rotatingSpeed}"); };
+        controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
+
+        controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); Debug.Log($"Right {rotatingSpeed}"); };
+        controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
+
+        controls.Enable();
+    }
+
     void Start()
     {
         playerModel = transform.GetChild(0);
@@ -42,32 +67,36 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        //if (Input.GetKey(KeyCode.Escape))
+        //    Cursor.lockState = CursorLockMode.None;
+        //else
+        //    Cursor.lockState = CursorLockMode.Locked;
+
         float h = joystick ? Input.GetAxis("Horizontal") : Input.GetAxis("Mouse X");
         float v = joystick ? Input.GetAxis("Vertical") : Input.GetAxis("Mouse Y");
 
+        Move(h, v);
+
+        leaningAngle += rotatingSpeed;
+
+        Lean(leaningAngle);
+    }
+
+    void Move(float h, float v)
+    {
         LocalMove(h, v, xySpeed);
-        RotationLook(h,v, lookSpeed);
-        HorizontalLean(playerModel, h, 80, .1f);
+        RotationLook(h, v, lookSpeed);
+    }
 
-        if (Input.GetButtonDown("Action"))
-            Boost(true);
+    void Lean(float direction)
+    {
+        if (direction != 0) HorizontalLean(playerModel, direction % 360);
+        else                ResetLeaning();
+    }
 
-        if (Input.GetButtonUp("Action"))
-            Boost(false);
-
-        if (Input.GetButtonDown("Fire3"))
-            Break(true);
-
-        if (Input.GetButtonUp("Fire3"))
-            Break(false);
-
-        if (Input.GetButtonDown("TriggerL") || Input.GetButtonDown("TriggerR"))
-        {
-            int dir = Input.GetButtonDown("TriggerL") ? -1 : 1;
-            QuickSpin(dir);
-        }
-
-
+    void ResetLeaning()
+    {
+        HorizontalLeanLerp(playerModel, 0, 0.05f);
     }
 
     void LocalMove(float x, float y, float speed)
@@ -91,10 +120,16 @@ public class PlayerMovement : MonoBehaviour
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(aimTarget.position), Mathf.Deg2Rad * speed * Time.deltaTime);
     }
 
-    void HorizontalLean(Transform target, float axis, float leanLimit, float lerpTime)
+    void HorizontalLean(Transform target, float axis)
     {
         Vector3 targetEulerAngels = target.localEulerAngles;
-        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, Mathf.LerpAngle(targetEulerAngels.z, -axis * leanLimit, lerpTime));
+        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, -axis);
+    }
+
+    void HorizontalLeanLerp(Transform target, float axis, float lerpTime)
+    {
+        Vector3 targetEulerAngels = target.localEulerAngles;
+        target.localEulerAngles = new Vector3(targetEulerAngels.x, targetEulerAngels.y, Mathf.LerpAngle(targetEulerAngels.z, -axis, lerpTime));
     }
 
     private void OnDrawGizmos()
@@ -105,11 +140,11 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
-    public void QuickSpin(int dir)
+    public void Roll(int direction)
     {
         if (!DOTween.IsTweening(playerModel))
         {
-            playerModel.DOLocalRotate(new Vector3(playerModel.localEulerAngles.x, playerModel.localEulerAngles.y, 360 * -dir), .4f, RotateMode.LocalAxisAdd).SetEase(Ease.OutSine);
+            playerModel.DOLocalRotate(new Vector3(playerModel.localEulerAngles.x, playerModel.localEulerAngles.y, 360 * -direction), .4f, RotateMode.LocalAxisAdd).SetEase(Ease.OutSine);
             barrel.Play();
         }
     }
@@ -183,5 +218,10 @@ public class PlayerMovement : MonoBehaviour
 
         DOVirtual.Float(dolly.m_Speed, speed, .15f, SetSpeed);
         SetCameraZoom(zoom, .4f);
+    }
+
+    void Shoot()
+    {
+        Debug.Log("We shot the sherif");
     }
 }

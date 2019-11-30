@@ -10,11 +10,11 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            active = !active;
-            GameCamera(active);
-        }
+        //if (Input.GetKeyDown(KeyCode.Alpha1))
+        //{
+        //    active = !active;
+        //    GameCamera(active);
+        //}
     }
 
     void GameCamera(bool state)
