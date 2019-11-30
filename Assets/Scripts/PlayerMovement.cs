@@ -71,11 +71,13 @@ public class PlayerMovement : MonoBehaviour
         controls.StarshipControls.Break.started += ctx => { Break(true); };
         controls.StarshipControls.Break.canceled += ctx => { Break(false); };
 
-        controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); };
-        controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
+        //controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); };
+        //controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
 
-        controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); };
-        controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
+        controls.StarshipControls.LeanRight.performed += ctx => { Shoot(); };
+
+        //controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); };
+        //controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
 
         controls.Enable();
     }
