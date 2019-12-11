@@ -12,13 +12,11 @@ public class PlayerMovement : MonoBehaviour
     [Header("Settings")]
     public bool joystick = false;
 
-    public PlayerInputActions controls;
-
     [Space]
 
     [Header("Parameters")]
     public float xySpeed = 18;
-    public float lookSpeed = 200;
+    public float lookSpeed = 250;
     public float forwardSpeed = 6;
 
     [Space]
@@ -44,43 +42,19 @@ public class PlayerMovement : MonoBehaviour
 
     /////////////////////////////////////////////////////////
 
-    private float moveX;
-    private float moveY;
+    public float moveX;
+    public float moveY;
 
     /////////////////////////////////////////////////////////
 
-    private float aimX;
-    private float aimY;
+    public float aimX;
+    public float aimY;
 
     /////////////////////////////////////////////////////////
 
     private bool boosting;
     private bool breaking;
-
-    void Awake()
-    {
-        controls = new PlayerInputActions();
-
-        controls.StarshipControls.Shoot.performed += ctx => Shoot();
-        controls.StarshipControls.Move.performed += ctx => { moveX = ctx.ReadValue<Vector2>().x; moveY = ctx.ReadValue<Vector2>().y; };
-        controls.StarshipControls.Aim.performed += ctx => { aimX = ctx.ReadValue<Vector2>().x; aimY = ctx.ReadValue<Vector2>().y; };
-
-        controls.StarshipControls.Boost.started  += ctx => { Boost(true); };
-        controls.StarshipControls.Boost.canceled += ctx => { Boost(false); };
-
-        controls.StarshipControls.Break.started += ctx => { Break(true); };
-        controls.StarshipControls.Break.canceled += ctx => { Break(false); };
-
-        //controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); };
-        //controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
-
-        controls.StarshipControls.LeanRight.performed += ctx => { Shoot(); };
-
-        //controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); };
-        //controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
-
-        controls.Enable();
-    }
+   
 
     void Start()
     {
@@ -104,19 +78,19 @@ public class PlayerMovement : MonoBehaviour
 
         Lean(leaningAngle);
 
-        RotationLook(aimX, aimY, lookSpeed);
+        RotationLook(moveX, moveY, lookSpeed);
     }
 
     void Move(float h, float v)
     {
         LocalMove(h, v, xySpeed);
-        //RotationLook(h, v, lookSpeed);
+        RotationLook(h, v, lookSpeed);
     }
 
     void Lean(float direction)
     {
-        if (direction != 0) HorizontalLean(playerModel, direction % 360);
-        else                ResetLeaning();
+        //if (direction != 0) HorizontalLean(playerModel, direction % 360);
+        //else                ResetLeaning();
     }
 
     void ResetLeaning()
@@ -140,7 +114,7 @@ public class PlayerMovement : MonoBehaviour
 
     void RotationLook(float h, float v, float speed)
     {
-        var rotationClamp = 0.3f;
+        var rotationClamp = 0.5f;
 
         h = Mathf.Clamp(h, -rotationClamp, rotationClamp);
         v = Mathf.Clamp(v, -rotationClamp, rotationClamp);
@@ -206,7 +180,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
 
-    void Boost(bool state)
+    public void Boost(bool state)
     {
 
         if (state)
@@ -242,7 +216,7 @@ public class PlayerMovement : MonoBehaviour
         SetCameraZoom(zoom, .4f);
     }
 
-    void Break(bool state)
+    public void Break(bool state)
     {
         float speed = state ? forwardSpeed / 3 : forwardSpeed;
         float zoom = state ? 3 : 0;
@@ -251,7 +225,7 @@ public class PlayerMovement : MonoBehaviour
         SetCameraZoom(zoom, .4f);
     }
 
-    void Shoot()
+    public void Shoot()
     {
         var bullet = Instantiate(projectile, aimObject.position, aimObject.rotation);
         var bulletRB = bullet.GetComponent<Rigidbody>();
