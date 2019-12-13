@@ -2,20 +2,51 @@
 using System.Linq;
 using UnityEngine;
 
-public class InputBuffer : MonoBehaviour
+public interface IInputBuffer
+{
+    void Add(string command);
+    string GetNext();
+}
+
+public class InputBuffer : MonoBehaviour, IInputBuffer
 {
     public List<string> InputValues { get; set; }
 
     public int CountLimit { get; set; } = 3;
 
-    public InputBuffer()
+    public PlayerInputActions _controls;
+    private IPlayerMovement _playerMovement;
+
+    public void Initialize(PlayerInputActions controls, IPlayerMovement playerMovement)
     {
+        _controls = controls;
+        _playerMovement = playerMovement;
         InputValues = new List<string>();
+        BindInputs();
     }
 
-    PlayerManager _playerManager;
+    void BindInputs()
+    {
+        _controls.StarshipControls.Shoot.performed += ctx => Add("Attacking");
+        //controls.StarshipControls.Shoot.canceled += ctx => _animator.SetBool("Attacking", false);
 
-    public PlayerInputActions controls;
+        //_controls.StarshipControls.Move.performed += ctx => {  moveX = ctx.ReadValue<Vector2>().x; moveY = ctx.ReadValue<Vector2>().y; };
+        _controls.StarshipControls.Move.performed += ctx => { _playerMovement.moveX = ctx.ReadValue<Vector2>().x; _playerMovement.moveY = ctx.ReadValue<Vector2>().y; };
+        //_controls.StarshipControls.Aim.performed += ctx => { aimX = ctx.ReadValue<Vector2>().x; aimY = ctx.ReadValue<Vector2>().y; };
+
+
+        //controls.StarshipControls.Boost.started += ctx => { Boost(true); };
+        //controls.StarshipControls.Boost.canceled += ctx => { Boost(false); };
+
+        //controls.StarshipControls.Break.started += ctx => { Break(true); };
+        //controls.StarshipControls.Break.canceled += ctx => { Break(false); };
+
+        _controls.StarshipControls.LeanRight.performed += ctx => { _playerMovement.RotatingSpeed = ctx.ReadValue<float>(); };
+        _controls.StarshipControls.LeanRight.canceled += ctx => { _playerMovement.ResetRotation(); };
+
+        _controls.StarshipControls.LeanLeft.performed += ctx => { _playerMovement.RotatingSpeed = -ctx.ReadValue<float>(); };
+        _controls.StarshipControls.LeanLeft.canceled += ctx => { _playerMovement.ResetRotation(); };
+    }
 
     void Awake()
     {
@@ -24,57 +55,25 @@ public class InputBuffer : MonoBehaviour
         // https://forum.unity.com/threads/get-parameter-from-the-animator.202938/
         // https://docs.unity3d.com/ScriptReference/StateMachineBehaviour.html
         // https://docs.unity3d.com/Manual/script-AnimationWindowEvent.html
-
-        _playerManager = GetComponent<PlayerManager>();
-        
-        controls = new PlayerInputActions();
-
-        controls.StarshipControls.Shoot.performed += ctx => Add("Attacking");
-        //controls.StarshipControls.Shoot.canceled += ctx => _animator.SetBool("Attacking", false);
-
-
-        ///////////////
-
-        //controls.StarshipControls.Move.performed += ctx => { moveX = ctx.ReadValue<Vector2>().x; moveY = ctx.ReadValue<Vector2>().y; };
-        //controls.StarshipControls.Aim.performed += ctx => { aimX = ctx.ReadValue<Vector2>().x; aimY = ctx.ReadValue<Vector2>().y; };
-
-        //controls.StarshipControls.Boost.started += ctx => { Boost(true); };
-        //controls.StarshipControls.Boost.canceled += ctx => { Boost(false); };
-
-        //controls.StarshipControls.Break.started += ctx => { Break(true); };
-        //controls.StarshipControls.Break.canceled += ctx => { Break(false); };
-
-        ///////////////
-
-        //controls.StarshipControls.LeanLeft.performed += ctx => { rotatingSpeed = ctx.ReadValue<float>(); };
-        //controls.StarshipControls.LeanLeft.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
-
-        //controls.StarshipControls.LeanRight.performed += ctx => { Shoot(); };
-
-        //controls.StarshipControls.LeanRight.performed += ctx => { rotatingSpeed = -ctx.ReadValue<float>(); };
-        //controls.StarshipControls.LeanRight.canceled += ctx => { rotatingSpeed = 0; leaningAngle = 0; };
-
-        controls.Enable();
     }
 
     public void Add(string lastInput)
     {
         if (InputValues == null) InputValues = new List<string>();
 
-        foreach (var command in lastInput)
-        {
-            if (InputValues.Count == CountLimit) InputValues.RemoveAt(0);
-
-            InputValues.Add(command.ToString());
-        }
+        if (InputValues.Count == CountLimit) InputValues.RemoveAt(0);
+        InputValues.Add(lastInput);
+        Debug.Log(lastInput.ToString());
     }
 
-    public string GetNextAction()
+    public string GetNext()
     {
         if (InputValues.Count <= 0) return null;
 
         var value = InputValues.Last();
-        InputValues = new List<string>();
+        InputValues.RemoveAt(InputValues.Count-1);
+        //InputValues = new List<string>();
+
         return value;
     }
 }

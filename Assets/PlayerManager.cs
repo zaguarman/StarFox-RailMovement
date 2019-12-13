@@ -1,42 +1,56 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class PlayerManager : MonoBehaviour
 {
     InputBuffer _inputBuffer;
     PlayerMovement _playerMovement;
     Animator _animator;
+    PlayerInputActions _controls;
+    bool _attacking;
+
+    GameObject _player;
 
     private void Awake()
     {
-        _inputBuffer = GetComponent<InputBuffer>();
-        _playerMovement = GetComponent<PlayerMovement>();
+        _player = GameObject.Find("Player");
+
+        _controls = new PlayerInputActions();
         _animator = GetComponent<Animator>();
+        _playerMovement = GetComponent<PlayerMovement>();
+        _inputBuffer = this.gameObject.AddComponent(typeof(InputBuffer)) as InputBuffer;
+        _inputBuffer.Initialize(_controls, _playerMovement);
+        _controls.Enable();
     }
 
     private void Update()
     {
-        // Watch if animation state == ready (idle o lo que sea)
-
-        // input buffer.GetNextAction();
-        // Start next action
         // TODO: Give the actions IStartable to start them directly
-
-
-        if (_inputBuffer.GetNextAction() == "g")
-        {
-            Debug.Log("Started animation Attacking");
-            _animator.SetBool("Attacking", true);
+        if(!_attacking) {
+            if (_inputBuffer.GetNext() == "Attacking")
+            {
+                Debug.Log("Started animation Attacking");
+                Attack();
+            }
         }
     }
 
-    public void AlertObservers(string message)
+    void Attack()
     {
-        _animator.SetBool("Attacking", false);
+        _animator.SetBool("Attacking", true);
+        StartCoroutine(Attacking());
     }
 
-    public void ShootEvent()
+    IEnumerator Attacking()
     {
+        if (_attacking) yield break;
+        
+        _attacking = true;
         _playerMovement.Shoot();
+
+        yield return new WaitForSeconds(0.5f);
+
+        _attacking = false;
         _animator.SetBool("Attacking", false);
     }
 }

@@ -3,7 +3,18 @@ using DG.Tweening;
 using Cinemachine;
 using UnityEngine.Rendering.PostProcessing;
 
-public class PlayerMovement : MonoBehaviour
+public interface IPlayerMovement
+{
+    float moveX { get; set; }
+    float moveY { get; set; }
+
+    float RotatingSpeed { get; set; }
+    float LeaningAngle { get; set; }
+    
+    void ResetRotation();
+}
+
+public class PlayerMovement : MonoBehaviour, IPlayerMovement
 {
     private Transform playerModel;
     public GameObject projectile;
@@ -18,6 +29,8 @@ public class PlayerMovement : MonoBehaviour
     public float xySpeed = 18;
     public float lookSpeed = 250;
     public float forwardSpeed = 6;
+    public float rollingSpeed = 4f;
+    public float maxLeaningAnglePerFrame = 30f;
 
     [Space]
 
@@ -34,27 +47,34 @@ public class PlayerMovement : MonoBehaviour
     public ParticleSystem barrel;
     public ParticleSystem stars;
 
-    /////////////////////////////////////////////////////////
-
-    private float speedMultiplier = 2f;
-    private float rotatingSpeed;
-    private float leaningAngle;
 
     /////////////////////////////////////////////////////////
 
-    public float moveX;
-    public float moveY;
+    public float RotatingSpeed { get; set; }
+    public float LeaningAngle { get; set; }
 
     /////////////////////////////////////////////////////////
 
-    public float aimX;
-    public float aimY;
+    private float _moveX;
+    public float moveX
+    {
+        get { return _moveX; }
+        set { _moveX = value; }
+    }
+
+    private float _moveY;
+    public float moveY
+    {
+        get { return _moveY; }
+        set { _moveY = value; }
+    }
 
     /////////////////////////////////////////////////////////
 
     private bool boosting;
     private bool breaking;
-   
+
+    /////////////////////////////////////////////////////////
 
     void Start()
     {
@@ -73,24 +93,36 @@ public class PlayerMovement : MonoBehaviour
         //float v = joystick ? Input.GetAxis("Vertical") : Input.GetAxis("Mouse Y");
 
         Move(moveX, moveY);
-
-        leaningAngle += rotatingSpeed * speedMultiplier;
-
-        Lean(leaningAngle);
-
-        RotationLook(moveX, moveY, lookSpeed);
+        Lean();
     }
 
-    void Move(float h, float v)
+    public void Move(float h, float v)
     {
         LocalMove(h, v, xySpeed);
         RotationLook(h, v, lookSpeed);
     }
 
-    void Lean(float direction)
+    void Lean()
     {
-        //if (direction != 0) HorizontalLean(playerModel, direction % 360);
-        //else                ResetLeaning();
+        Debug.Log("Rotating Speed: " + RotatingSpeed.ToString());
+        Debug.Log("Leaning Angle: " + LeaningAngle.ToString());
+
+        if (RotatingSpeed == 0)
+        {
+            ResetLeaning();
+            return;
+        }
+        else if (Mathf.Abs(RotatingSpeed) < 0.1)
+        {
+            return;
+        }
+
+        LeaningAngle += RotatingSpeed * rollingSpeed;
+        //LeaningAngle = LeaningAngle % 360;
+        //LeaningAngle = LeaningAngle < maxLeaningAnglePerFrame ? LeaningAngle : maxLeaningAnglePerFrame;
+
+
+        if (RotatingSpeed != 0) HorizontalLean(playerModel, LeaningAngle);
     }
 
     void ResetLeaning()
@@ -230,5 +262,11 @@ public class PlayerMovement : MonoBehaviour
         var bullet = Instantiate(projectile, aimObject.position, aimObject.rotation);
         var bulletRB = bullet.GetComponent<Rigidbody>();
         bulletRB.AddForce(aimObject.transform.forward * 5000);
+    }
+
+    public void ResetRotation()
+    {
+        RotatingSpeed = 0f;
+        LeaningAngle = 0f;
     }
 }
